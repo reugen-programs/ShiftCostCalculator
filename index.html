@@ -73,7 +73,6 @@
 		<label for="formatToggle" class="text-sm font-medium">Use Egg, Inc. OoM format</label>
 	</div>
 
-
 	<!-- Two Panels Container -->
 	<div class="w-full flex flex-col lg:flex-row gap-6 max-w-6xl">
 
@@ -185,7 +184,8 @@
 	<footer class="w-full text-center py-4 mt-8 border-t border-gray-300 text-sm text-gray-500 bg-gray-50">
 		<p>
 			Created by Reugen.
-			(<a href="https://github.com/reugen-programs/ShiftCostCalculator" target="_blank" class="text-blue-500 hover:underline">Source Code</a>)
+			(<a href="https://github.com/reugen-programs/ShiftCostCalculator" target="_blank"
+				class="text-blue-500 hover:underline">Source Code</a>)
 		</p>
 		<p>
 			Built with
@@ -598,7 +598,7 @@
 				document.getElementById('rightChart'),
 				nInput,
 				E,
-				true
+				false
 			);
 			document.getElementById('rightAnswer').innerHTML = `${E} (${formatToOoM(E)})`;
 		}
