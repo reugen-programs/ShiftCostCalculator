@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>The Cost of Truth</title>
+	<link rel="icon" type="image/png" href="assets/truth.png">
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+	<style>
+		.input-error {
+			border-color: #ef4444 !important;
+			/* Tailwind red-500 */
+			box-shadow: 0 0 0 1px #ef4444;
+		}
+
+		.tooltip-error {
+			position: absolute;
+			background: #fee2e2;
+			/* red-100 */
+			color: #b91c1c;
+			/* red-700 */
+			font-size: 0.75rem;
+			padding: 0.25rem 0.5rem;
+			border-radius: 0.25rem;
+			top: 100%;
+			left: 0;
+			margin-top: 2px;
+			white-space: nowrap;
+			z-index: 50;
+		}
+
+		.fullscreen {
+			position: fixed !important;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 95vw !important;
+			height: 90vh !important;
+			z-index: 9999;
+			background: white;
+			padding: 1rem;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+		}
+	</style>
+</head>
+
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center p-4">
+
+	<!-- Title -->
+	<h1 class="flex items-center justify-center text-center text-3xl font-bold gap-2 mb-6">
+		<img src="assets/truth.png" alt="Truth Egg" class="w-10 h-10 object-contain">
+		The Cost of Truth
+		<img src="assets/truth.png" alt="Truth Egg" class="w-10 h-10 object-contain">
+	</h1>
+
+	<!-- Shared Input -->
+	<div class="w-full max-w-md mb-6">
+		<label for="inputA" class="block text-lg font-medium mb-2 text-center">
+			Current Shift Count:
+		</label>
+		<div class="relative w-full max-w-xs mx-auto">
+			<input id="inputA" type="number" min="0" max="520"
+				class="w-full border rounded-lg p-2 text-center focus:ring focus:ring-blue-300"
+				placeholder="Your current Shift Count">
+			<img src="assets/shift.png" alt="Shift icon"
+				class="absolute right-8 top-1/2 -translate-y-1/2 w-5 h-5 object-contain">
+		</div>
+	</div>
+	<div class="flex items-center gap-2 p-2 justify-center">
+		<input type="checkbox" id="formatToggle" class="w-4 h-4 accent-blue-600" checked>
+		<label for="formatToggle" class="text-sm font-medium">Use Egg, Inc. OoM format</label>
+	</div>
+
+
+	<!-- Two Panels Container -->
+	<div class="w-full flex flex-col lg:flex-row gap-6 max-w-6xl">
+
+		<!-- PANEL_1 -->
+		<div class="flex-1 bg-white shadow rounded-2xl p-4">
+			<div class="flex justify-between items-center mb-3">
+				<h2 class="flex items-center justify-center text-xl font-semibold gap-2">
+					Maximum Shift Count<img src="assets/shift.png" alt="Shift icon"
+						class="w-5 h-5 object-contain">Calculator
+				</h2>
+				<button onclick="togglePanel('leftPanelContent')" class="text-blue-500 hover:underline text-sm">
+					Toggle
+				</button>
+			</div>
+
+			<div id="leftPanelContent" class="space-y-4">
+				<h3 class="text-x2 h-14 font-semibold">Q: How many Shifts can I do before running out of Soul Eggs?</h3>
+				<div class="text-center">
+					<label for="leftInput" class="block text-lg mb-2">Current Soul Eggs:</label>
+					<div class="relative w-full max-w-xs mx-auto">
+						<img src="assets/soul.png" alt="Soul Eggs"
+							class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 object-contain">
+						<input id="leftInput" type="text"
+							class="w-full border rounded-lg p-2 text-center focus:ring focus:ring-blue-300"
+							placeholder="Your current Soul Eggs">
+					</div>
+				</div>
+				<div id="leftDetails" class="hidden">
+					<p id="leftAnswerBlock" class="flex items-center gap-2">
+						A: At most
+						<span id="leftAnswer" class="font-bold"></span>
+						more Shifts.<img src="assets/shift.png" alt="Shift icon" class="w-5 h-5 object-contain">
+					</p>
+					<div class="mt-4">
+						<canvas id="leftChart" class="w-full h-48"></canvas>
+					</div>
+					<div class="overflow-x-auto">
+						<table id="leftTable" class="w-full text-sm border-collapse">
+							<thead>
+								<tr class="bg-gray-200">
+									<th class="border p-2">Shift Count</th>
+									<th class="border p-2">Soul Egg Cost</th>
+									<th class="border p-2">Total SE Cost</th>
+									<th class="border p-2">Remaining SE</th>
+								</tr>
+							</thead>
+							<tbody id="leftTableBody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- PANEL_2 -->
+		<div class="flex-1 bg-white shadow rounded-2xl p-4">
+			<div class="flex justify-between items-center mb-3">
+				<h2 class="flex items-center justify-center text-xl font-semibold gap-2">
+					Minimum Soul Eggs<img src="assets/soul.png" alt="Soul Eggs"
+						class="w-7 h-7 object-contain">Calculator
+				</h2>
+				<button onclick="togglePanel('rightPanelContent')" class="text-blue-500 hover:underline text-sm">
+					Toggle
+				</button>
+			</div>
+
+			<div id="rightPanelContent" class="space-y-4">
+				<h3 class="text-x2 h-14 font-semibold">Q: How many Soul Eggs are required to be able to do the planned
+					amount of
+					Shifts?</h3>
+				<div class="text-center">
+					<label for="rightInput" class="block text-lg mb-2">Planned Shift Amount:</label>
+					<div class="relative w-full max-w-xs mx-auto">
+						<span
+							class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 select-none pointer-events-none">+</span>
+						<input id="rightInput" type="number" min="0" max="320"
+							class="w-full border rounded-lg p-2 text-center focus:ring focus:ring-blue-300"
+							placeholder="Planned additional Shifts">
+						<img src="assets/shift.png" alt="Shift icon"
+							class="absolute right-8 top-1/2 -translate-y-1/2 w-5 h-5 object-contain">
+					</div>
+				</div>
+				<div id="rightDetails" class="hidden">
+					<p id="rightAnswerBlock" class="flex items-center gap-2">
+						A: At least
+						<span id="rightAnswer" class="font-bold"></span>
+						Soul Eggs.<img src="assets/soul.png" alt="Shift icon" class="w-5 h-5 object-contain">
+					</p>
+					<div class="mt-4">
+						<canvas id="rightChart" class="w-full h-48"></canvas>
+					</div>
+					<div class="overflow-x-auto">
+						<table id="rightTable" class="w-full text-sm border-collapse">
+							<thead>
+								<tr class="bg-gray-200">
+									<th class="border p-2">Shift Count</th>
+									<th class="border p-2">Soul Egg Cost</th>
+									<th class="border p-2">Total SE Cost</th>
+									<th class="border p-2">Remaining SE</th>
+								</tr>
+							</thead>
+							<tbody id="rightTableBody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+	<footer class="w-full text-center py-4 mt-8 border-t border-gray-300 text-sm text-gray-500 bg-gray-50">
+		<p>
+			Created by Reugen.
+			(<a href="https://github.com/reugen-programs/ShiftCostCalculator" target="_blank" class="text-blue-500 hover:underline">Source Code</a>)
+		</p>
+		<p>
+			Built with
+			<a href="https://tailwindcss.com/" target="_blank" class="text-blue-500 hover:underline">TailwindCSS</a>
+			&amp; <a href="https://www.chartjs.org/" target="_blank" class="text-blue-500 hover:underline">Chart.js</a>.
+		</p>
+		<p>
+			Assets are used under rights belonging to © <a href="https://auxbrain.com/" target="_blank"
+				class="text-blue-500 hover:underline">Auxbrain, Inc.</a> as part of the game Egg, Inc.
+		</p>
+	</footer>
+
+	<script>
+		let useCompactFormat = true;
+		let leftChartInstance = null;
+		let rightChartInstance = null;
+		// DELAYED INPUT HANDLER
+		const delayedRealCost = debounce(realCost, 600);
+		const delayedMinimumSE = debounce(minimumSE, 600);
+		// EVENT LISTENERS
+		document.getElementById('inputA').addEventListener('input', delayedRealCost);
+		document.getElementById('leftInput').addEventListener('input', delayedRealCost);
+		document.getElementById('inputA').addEventListener('input', delayedMinimumSE);
+		document.getElementById('rightInput').addEventListener('input', delayedMinimumSE);
+		document.getElementById('formatToggle').addEventListener('change', (e) => {
+			useCompactFormat = e.target.checked;
+			updateDisplayedNumbers();
+			if (leftChartInstance) leftChartInstance.update();
+			if (rightChartInstance) rightChartInstance.update();
+		});
+		// UI FUNCTIONS
+		function updateDisplayedNumbers() {
+			const numericCells = document.querySelectorAll('[data-num]');
+			numericCells.forEach(cell => {
+				const rawValue = parseFloat(cell.getAttribute('data-num'));
+				if (isNaN(rawValue)) return;
+				cell.textContent = useCompactFormat ? formatToOoM(rawValue) : rawValue;
+			});
+		}
+		function togglePanel(panelId) {
+			const panel = document.getElementById(panelId);
+			panel.classList.toggle('hidden');
+		}
+		function drawResults(DetailsBlock, TableBody, ChartElement, N, StartingSE, HiddenTotal) {
+			DetailsBlock.classList.remove('hidden');
+			TableBody.innerHTML = ''; // Clear previous results
+
+			let total = 0.0;
+			let i = 0;
+			let E = StartingSE;
+			let currentCost = cost(N, E);
+			N++;
+			E -= currentCost;
+			total += currentCost;
+
+			const Ns = [];
+			const Ecosts = [];
+			const TotalEcosts = [];
+
+			while (E >= 0 && N <= 520) {
+				Ns.push(N);
+				Ecosts.push(currentCost);
+				TotalEcosts.push(total);
+
+				const row = document.createElement('tr');
+				row.innerHTML = `
+        <td class="border p-2 text-center">(+${++i}) ${N}</td>
+        <td class="border p-2 text-center" data-num="${currentCost}">${useCompactFormat ? formatToOoM(currentCost) : currentCost}</td>
+        <td class="border p-2 text-center" data-num="${total}">${useCompactFormat ? formatToOoM(total) : total}</td>
+        <td class="border p-2 text-center" data-num="${E}">${useCompactFormat ? formatToOoM(E) : E}</td>
+      `;
+				TableBody.appendChild(row);
+
+				currentCost = cost(N, E);
+				N++;
+				E -= currentCost;
+				total += currentCost;
+			}
+			drawChart(ChartElement, Ns, Ecosts, TotalEcosts, StartingSE, HiddenTotal);
+			return i;
+
+			function drawChart(ChElement, Ns, Ecosts, TotalEcosts, constantE, IsHiddenTotal) {
+				const ctx = ChElement.getContext('2d');
+
+				if (ChElement.id === 'leftChart') {
+					if (leftChartInstance) {
+						leftChartInstance.destroy();
+					}
+				}
+				else if (ChElement.id === 'rightChart') {
+					if (rightChartInstance) {
+						rightChartInstance.destroy();
+					}
+				}
+				else return;
+
+				const ChInstance = new Chart(ctx, {
+					type: 'line',
+					data: {
+						labels: Ns,
+						datasets: [
+							{
+								label: 'Cost',
+								data: Ecosts,
+								borderColor: 'rgba(37, 99, 235, 0.9)', // blue
+								fill: false,
+								tension: 0.2,
+								hidden: !IsHiddenTotal
+							},
+							{
+								label: 'Total Cost',
+								data: TotalEcosts,
+								borderColor: 'rgba(234, 88, 12, 0.9)', // orange
+								fill: false,
+								tension: 0.2,
+								hidden: IsHiddenTotal
+							},
+							{
+								label: 'Starting Amount',
+								data: Array(Ns.length).fill(constantE),
+								borderColor: 'rgba(16, 185, 129, 0.7)', // green
+								//borderDash: [5,5],
+								fill: false,
+								tension: 0,
+								hidden: IsHiddenTotal
+							}
+						]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						scales: {
+							x: {
+								title: { display: true, text: 'Shift Count' },
+								beginAtZero: false
+							},
+							y: {
+								title: { display: true, text: 'Soul Eggs' },
+								beginAtZero: false,
+								ticks: {
+									callback: (value) => useCompactFormat ? formatToOoM(value) : value.toExponential(2)
+								}
+							}
+						},
+						plugins: {
+							legend: { position: 'top' },
+							tooltip: {
+								callbacks: {
+									label: (context) => {
+										const label = context.dataset.label || '';
+										const val = context.parsed.y;
+										return `${label}: ${useCompactFormat ? formatToOoM(val) : val.toExponential(3)}`;
+									}
+								}
+							}
+						}
+					}
+				});
+
+				if (ChElement.id === 'leftChart') {
+					leftChartInstance = ChInstance;
+				}
+				else if (ChElement.id === 'rightChart') {
+					rightChartInstance = ChInstance;
+				}
+			}
+		}
+		// HELPER FUNCTIONS
+		function debounce(fn, delay = 500) {
+			let timeout;
+			return (...args) => {
+				clearTimeout(timeout);
+				timeout = setTimeout(() => fn(...args), delay);
+			};
+		}
+		const SUFFIXES = [
+			["", 1],
+			["K", 1e3],
+			["M", 1e6],
+			["B", 1e9],
+			["T", 1e12],
+			["q", 1e15],
+			["Q", 1e18],
+			["s", 1e21],
+			["S", 1e24],
+			["o", 1e27],
+			["N", 1e30],
+			["d", 1e33],
+			["U", 1e36],
+			["D", 1e39],
+			["Td", 1e42],
+			["qd", 1e45],
+			["Qd", 1e48],
+			["sd", 1e51],
+			["Sd", 1e54],
+			["Od", 1e57],
+			["Nd", 1e60],
+			["V", 1e63],
+			["uV", 1e66],
+			["dV", 1e69],
+			["tV", 1e72],
+			["qV", 1e75],
+			["QV", 1e78],
+			["sV", 1e81],
+			["SV", 1e84],
+			["OV", 1e87],
+			["NV", 1e90],
+			["tT", 1e93]
+		];
+
+		/**
+		 * Format a number using the highest applicable suffix
+		 * @param {number} num
+		 * @returns {string}
+		 */
+		function formatToOoM(num) {
+			if (!isFinite(num)) return String(num);
+			// Find largest suffix
+			let chosen = SUFFIXES[0];
+			for (let i = 1; i < SUFFIXES.length; i++) {
+				if (num >= SUFFIXES[i][1]) chosen = SUFFIXES[i];
+				else break;
+			}
+
+			const scaled = num / chosen[1];
+			if (chosen[0] === "") {
+				return Math.round(scaled).toString();
+			} else {
+				return scaled.toFixed(3) + chosen[0];
+			}
+		}
+
+		/**
+		 * Parse a string with suffix back into a number.
+		 * @param {string|number} str
+		 * @returns {number}
+		 */
+		function parseOoM(str) {
+			if (typeof str === "number") return str;
+			const match = String(str).trim().match(/^(-?[\d.]+)([A-Za-z]*)$/);
+			if (!match) return NaN;
+
+			const value = parseFloat(match[1]);
+			const suffix = match[2] || "";
+			const found = SUFFIXES.find(([s]) => s === suffix);
+			const multiplier = found ? found[1] : 1;
+
+			return value * multiplier;
+		}
+		function showInputError(inputEl, message) {
+			// Remove old tooltip if any
+			const existing = inputEl.parentElement.querySelector('.tooltip-error');
+			if (existing) existing.remove();
+
+			inputEl.classList.add('input-error');
+
+			// Create tooltip
+			const tip = document.createElement('div');
+			tip.className = 'tooltip-error';
+			tip.textContent = message;
+			inputEl.parentElement.appendChild(tip);
+		}
+		function clearInputError(inputEl) {
+			inputEl.classList.remove('input-error');
+			const existing = inputEl.parentElement.querySelector('.tooltip-error');
+			if (existing) existing.remove();
+		}
+		// MATH FUNCTIONS
+		function cost(N, E) {
+			const costBase = E * (0.02 * Math.pow(N / 120.0, 3) + 0.0001);
+			return Math.ceil(Math.pow(10, 11) + 0.6 * costBase + Math.pow(0.4 * costBase, 0.9));
+		}
+		function solveEForStep(N, R, tol = 1e-9, maxIter = 200) {
+			const h = (E) => E - cost(N, E) - R;
+
+			let h0 = h(0);
+			if (Math.abs(h0) <= tol) return 0;
+
+			let low = 0;
+			let high = 1;
+			let hHigh = h(high);
+			let expand = 0;
+
+			// Expand upper bound until we bracket root
+			while (hHigh < 0 && expand < 200) {
+				high *= 2;
+				hHigh = h(high);
+				expand++;
+			}
+
+			if (hHigh < 0) {
+				console.error("Unable to bracket root for N=" + N);
+				return NaN;
+			}
+
+			// Bisection loop
+			for (let iter = 0; iter < maxIter; iter++) {
+				const mid = 0.5 * (low + high);
+				const hMid = h(mid);
+				if (Math.abs(hMid) <= tol || (high - low) / 2 < tol) return mid;
+				if (hMid > 0) high = mid;
+				else low = mid;
+			}
+			return 0.5 * (low + high);
+		}
+		function requiredInitialE_Backwards(startN, steps, tol = 1e-9) {
+			if (steps <= 0) return 0;
+
+			let lastN = startN + steps - 1;
+			let R_after = 0.0;
+			let E_before = solveEForStep(lastN, R_after, tol);
+
+			for (let N = lastN - 1; N >= startN; N--) {
+				E_before = solveEForStep(N, E_before, tol);
+			}
+			return E_before;
+		}
+
+		// MAIN LOGIC
+		function realCost() {
+			const nEl = document.getElementById("inputA");
+			const eEl = document.getElementById("leftInput");
+			clearInputError(nEl);
+			clearInputError(eEl);
+			const nInput = nEl.value.trim();
+			const eInput = eEl.value.trim();
+
+			if (nInput === "" || eInput === "") return;
+			let N = parseInt(nInput);
+			let E = parseOoM(eInput);
+			let errorFound = false;
+			if (isNaN(N)) {
+				showInputError(nEl, "Please enter a valid number.");
+				errorFound = true;
+			}
+			if (N < 0) {
+				showInputError(nEl, "Shift Count cannot be negative.");
+				errorFound = true;
+			}
+			if (N > 520) {
+				showInputError(nEl, "Current Shift Count cannot be greater than 520.");
+				errorFound = true;
+			}
+			if (isNaN(E)) {
+				showInputError(eEl, "Please enter a valid number.");
+				errorFound = true;
+			}
+			if (E < 0) {
+				showInputError(eEl, "Soul Egg amount cannot be negative.");
+				errorFound = true;
+			}
+			if (errorFound) return;
+
+			document.getElementById('leftInput').setAttribute('data-num', E);
+			let i = drawResults(
+				document.getElementById('leftDetails'),
+				document.getElementById('leftTableBody'),
+				document.getElementById('leftChart'),
+				N,
+				E,
+				true
+			);
+			document.getElementById('leftAnswer').innerHTML = i;
+		}
+
+		function minimumSE() {
+			const nEl = document.getElementById("inputA");
+			const pEl = document.getElementById("rightInput");
+			clearInputError(nEl);
+			clearInputError(pEl);
+			const nInput = parseInt(nEl.value.trim());
+			const plannedN = parseInt(pEl.value.trim());
+
+			if (nEl.value.trim() === "" || pEl.value.trim() === "") return;
+			let errorFound = false;
+			if (isNaN(nInput)) {
+				showInputError(nEl, "Please enter a valid number.");
+				errorFound = true;
+			}
+			if (nInput < 0) {
+				showInputError(nEl, "Shift Count cannot be negative.");
+				errorFound = true;
+			}
+			if (nInput > 520) {
+				showInputError(nEl, "Current Shift Count cannot be greater than 520.");
+				errorFound = true;
+			}
+			if (isNaN(plannedN)) {
+				showInputError(pEl, "Please enter a valid number.");
+				errorFound = true;
+			}
+			if (plannedN < 0) {
+				showInputError(pEl, "Shift Count cannot be negative.");
+				errorFound = true;
+			}
+			if (plannedN > 320) {
+				showInputError(pEl, "Planned Shift Count cannot be greater than 320.");
+				errorFound = true;
+			}
+			if (nInput + plannedN > 520) {
+				showInputError(pEl, "The Total SUM of the Shift Counts cannot be greater than 520.");
+				errorFound = true;
+			}
+			if (errorFound) return;
+
+			const E = Math.ceil(requiredInitialE_Backwards(nInput, plannedN) * (1 + 1e-11));
+			drawResults(
+				document.getElementById('rightDetails'),
+				document.getElementById('rightTableBody'),
+				document.getElementById('rightChart'),
+				nInput,
+				E,
+				true
+			);
+			document.getElementById('rightAnswer').innerHTML = `${E} (${formatToOoM(E)})`;
+		}
+	</script>
+</body>
+
+</html>
