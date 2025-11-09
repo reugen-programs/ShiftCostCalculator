@@ -106,10 +106,19 @@
 						<span id="leftAnswer" class="font-bold"></span>
 						more Shifts.<img src="assets/shift.png" alt="Shift icon" class="w-5 h-5 object-contain">
 					</p>
-					<div class="mt-4">
-						<canvas id="leftChart" class="w-full h-48"></canvas>
+					<div class="relative bg-white rounded-2xl shadow p-4">
+						<div class="flex justify-between items-center mb-2">
+							<h2 class="text-lg font-semibold"></h2>
+							<button onclick="openChartFullscreen(leftChartInstance)"
+								class="enlarge-btn text-gray-500 hover:text-gray-800" title="Enlarge">
+								Full Screen ⛶
+							</button>
+						</div>
+						<div class="chart-wrapper h-48">
+							<canvas id="leftChart" class="w-full h-full"></canvas>
+						</div>
 					</div>
-					<div class="overflow-x-auto">
+					<div class="overflow-x-auto mt-4">
 						<table id="leftTable" class="w-full text-sm border-collapse">
 							<thead>
 								<tr class="bg-gray-200">
@@ -160,10 +169,19 @@
 						<span id="rightAnswer" class="font-bold"></span>
 						Soul Eggs.<img src="assets/soul.png" alt="Shift icon" class="w-5 h-5 object-contain">
 					</p>
-					<div class="mt-4">
-						<canvas id="rightChart" class="w-full h-48"></canvas>
+					<div class="relative bg-white rounded-2xl shadow p-4">
+						<div class="flex justify-between items-center mb-2">
+							<h2 class="text-lg font-semibold"></h2>
+							<button onclick="openChartFullscreen(rightChartInstance)"
+								class="enlarge-btn text-gray-500 hover:text-gray-800" title="Enlarge">
+								Full Screen ⛶
+							</button>
+						</div>
+						<div class="chart-wrapper h-48">
+							<canvas id="rightChart" class="w-full h-full"></canvas>
+						</div>
 					</div>
-					<div class="overflow-x-auto">
+					<div class="overflow-x-auto mt-4">
 						<table id="rightTable" class="w-full text-sm border-collapse">
 							<thead>
 								<tr class="bg-gray-200">
@@ -181,6 +199,20 @@
 		</div>
 
 	</div>
+	<div id="chartOverlay" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50">
+		<div class="relative w-11/12 h-5/6 bg-white rounded-2xl shadow-xl p-4">
+			<button id="closeOverlayBtn" class="absolute top-3 right-3 text-black text-2xl font-bold">&times;</button>
+			<canvas id="overlayChart" class="w-full h-full"></canvas>
+		</div>
+	</div>
+	<div class="mt-8 text-sm text-gray-500 text-center max-w-2xl mx-auto">
+		<p>
+			<strong>Note:</strong> Results may not be exact because of rounding and safety margins. For performance
+			reasons, the maximum Shift Count
+			is limited to <strong>520</strong>.
+		</p>
+	</div>
+
 	<footer class="w-full text-center py-4 mt-8 border-t border-gray-300 text-sm text-gray-500 bg-gray-50">
 		<p>
 			Created by Reugen.
@@ -202,6 +234,7 @@
 		let useCompactFormat = true;
 		let leftChartInstance = null;
 		let rightChartInstance = null;
+		let overlayChartInstance = null;
 		// DELAYED INPUT HANDLER
 		const delayedRealCost = debounce(realCost, 600);
 		const delayedMinimumSE = debounce(minimumSE, 600);
@@ -216,6 +249,7 @@
 			if (leftChartInstance) leftChartInstance.update();
 			if (rightChartInstance) rightChartInstance.update();
 		});
+		document.getElementById('closeOverlayBtn').addEventListener('click', closeChartFullscreen);
 		// UI FUNCTIONS
 		function updateDisplayedNumbers() {
 			const numericCells = document.querySelectorAll('[data-num]');
@@ -353,6 +387,35 @@
 				}
 			}
 		}
+		function openChartFullscreen(chartInstance) {
+			if (chartInstance === null) return;
+			const overlay = document.getElementById('chartOverlay');
+			const overlayCanvas = document.getElementById('overlayChart');
+			const ctx = overlayCanvas.getContext('2d');
+
+			// Make overlay visible
+			overlay.classList.remove('hidden');
+			overlay.classList.add('flex');
+
+			// Clone chart config and data
+			const clonedConfig = chartInstance.config;
+
+			// Create new fullscreen chart
+			overlayChartInstance = new Chart(ctx, clonedConfig);
+		}
+
+		function closeChartFullscreen() {
+			const overlay = document.getElementById('chartOverlay');
+			overlay.classList.add('hidden');
+			overlay.classList.remove('flex');
+
+			// Destroy cloned chart to free memory
+			if (overlayChartInstance) {
+				overlayChartInstance.destroy();
+				overlayChartInstance = null;
+			}
+		}
+
 		// HELPER FUNCTIONS
 		function debounce(fn, delay = 500) {
 			let timeout;
